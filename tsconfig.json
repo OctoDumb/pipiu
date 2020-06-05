@@ -1,0 +1,12 @@
+{
+    "compilerOptions": {
+        "declaration": true,
+        "module": "CommonJS",
+        "outDir": "dist",
+        "resolveJsonModule": true,
+        "target": "ES2018"
+    },
+    "include": [
+        "./test.ts"
+    ]
+}
