@@ -11,11 +11,11 @@ class OsuStats extends BeatmapStats {
     }
 
     ODToHitWindow(od: number): number {
-        return od;
+        return 80 - 6 * od;
     }
 
     HitWindowToOD(hitWindow: number): number {
-        return hitWindow;
+        return (80 - hitWindow) / 6;
     }
 
     toString() {

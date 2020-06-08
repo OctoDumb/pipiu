@@ -12,11 +12,11 @@ class CatchStats extends BeatmapStats {
     }
 
     ODToHitWindow(od: number) {
-        return od;
+        return null;
     }
 
     HitWindowToOD(hitWindow: number) {
-        return hitWindow;
+        return null;
     }
 
     toString() {

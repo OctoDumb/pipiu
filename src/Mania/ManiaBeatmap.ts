@@ -11,11 +11,11 @@ class ManiaStats extends BeatmapStats {
     }
 
     ODToHitWindow(od: number) {
-        return od;
+        return 34 + 3 * od;
     }
 
     HitWindowToOD(hitWindow: number) {
-        return hitWindow;
+        return (hitWindow - 34) / 3;
     }
 
     toString() {
