@@ -1,6 +1,6 @@
 {
   "name": "pipiu",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "A star rating and PP calculator for osu!",
   "main": "dist/index.js",
   "scripts": {
