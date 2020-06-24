@@ -27,6 +27,8 @@ export default function CreateBeatmap(content: string | Buffer): Beatmap {
 export { 
     Mods,
 
+    Beatmap,
+
     OsuBeatmap,
     TaikoBeatmap,
     CatchBeatmap,
