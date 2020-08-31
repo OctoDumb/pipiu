@@ -2,12 +2,6 @@ import Difficulty from '../Difficulty';
 import TaikoHitObject, { NoteType } from './TaikoHitObject';
 import TaikoBeatmap from './TaikoBeatmap';
 
-const 
-    rhythm_change_base_threshold = 0.2,
-    rhythm_change_base = 2,
-    strain_decay_base = 0.3,
-    star_scaling_factor = 0.04125;
-
 enum ColourSwitch {
     None,
     Even,
@@ -19,103 +13,152 @@ interface TaikoDifficultyHitObject {
     strain: number
 }
 
-export default function CalculateDifficulty(beatmap: TaikoBeatmap, timeScale: number = 1): TaikoDifficulty {
-    let lastColour = ColourSwitch.None;
-    let sameColourCount = 1;
-
-    function hasColourChange(current: TaikoHitObject, previous: TaikoHitObject) {
-        if(previous === undefined) return false;
-
-        let typeChange = previous.Type == current.Type;
-    
-        if(!typeChange) {
-            sameColourCount++;
-            return false;
-        }
-
-        let oldColour = lastColour;
-        let newColour = sameColourCount % 2 ? ColourSwitch.Odd : ColourSwitch.Even;
-
-        lastColour = newColour;
-        sameColourCount = 1;
-
-        return oldColour != ColourSwitch.None && oldColour != newColour;
-    }
-
-    let strain = 1;
-    let sectionPeak = 1;
-
-    let objects: TaikoDifficultyHitObject[] = beatmap.HitObjects.map(object => ({ object, strain: 1 }));
-
-    for(let i = 0; i < objects.length; i++) {
-        let obj = objects[i];
-        let previous = i == 0 ? null : objects[i - 1];
-        let addition = 1;
-
-        if(obj.object.IsNote && obj.object.DeltaTime < 1e3) {
-            if(hasColourChange(obj.object, previous?.object))
-                addition += 0.75;
-
-            if(hasRhythmChange(obj.object, previous?.object))
-                addition += 1;
-        } else {
-            lastColour = ColourSwitch.None;
-            sameColourCount = 1;
-        }
-
-        let additionFactor = 1;
-
-        if(obj.object.DeltaTime < 50)
-            additionFactor = 0.4 + 0.6 * obj.object.DeltaTime / 50;
-
-        objects[i].strain = addition * additionFactor;
-    }
-
-    let strainStep = 400 * timeScale,
-        highestStrains = [],
-        interval = strainStep,
-        maxStrain = 0;
-
-    let last: TaikoDifficultyHitObject = null;
-
-    for(let o of objects) {
-        while(o.object.StartTime > interval) {
-            highestStrains.push(maxStrain);
-
-            if(last === null) maxStrain = 0;
-            else {
-                let decay = Math.pow(strain_decay_base, (interval - o.object.StartTime) / 1e3);
-                maxStrain = last.strain * decay;
-            }
-
-            interval += strainStep;
-        }
-
-        last = o;
-    }
-
-    let difficulty = 0,
-        weight = 1;
-
-    for(let strain of highestStrains.sort((a, b) => b - a)) {
-        difficulty += strain * weight;
-        weight *= 0.9;
-    }
-
-    return new TaikoDifficulty(difficulty * star_scaling_factor);
+export default function CalculateDifficulty(
+    beatmap: TaikoBeatmap,
+    timeScale: number
+): TaikoDifficulty {
+    return new DifficultyCalculator(beatmap, timeScale).diff;
 }
 
-function hasRhythmChange(current: TaikoHitObject, previous: TaikoHitObject) {
-    if(previous === undefined || current.StartTime - previous?.DeltaTime == 0)
-        return false;
+class DifficultyCalculator {
+    private readonly rhythm_change_base_threshold = 0.2;
+    private readonly rhythm_change_base = 2;
+    private readonly strain_decay_base = 0.3;
+    private readonly star_scaling_factor = 0.04125;
+
+    public diff: TaikoDifficulty; 
+
+    constructor(
+        private readonly beatmap: TaikoBeatmap,
+        private timeScale: number = 1
+    ) {
+        const objects: TaikoDifficultyHitObject[] = this.computeStrains();
+        const highestStrains: number[] = this.calcHighestStrains(objects);
+        const difficulty: number = this.calcDifficulty(highestStrains);
+
+        this.diff = new TaikoDifficulty(difficulty * this.star_scaling_factor);
+    }
+
+    private lastColour: ColourSwitch = ColourSwitch.None;
+    private sameColourCount: number = 1;
+
+    private applyColourChange(
+        cur: TaikoDifficultyHitObject,
+        prev: TaikoDifficultyHitObject
+    ): number  {
+        const typeChange: Boolean = prev.object.Type != cur.object.Type;
+
+        if (!typeChange) {
+            this.sameColourCount++;
+            return 0;
+        }
+
+        let oldColour: ColourSwitch = this.lastColour;
+        let newColour: ColourSwitch = this.sameColourCount % 2 ? ColourSwitch.Even : ColourSwitch.Odd;
+
+        this.lastColour = newColour;
+        this.sameColourCount = 1;
+
+        return oldColour != ColourSwitch.None && oldColour != newColour ? 0.75 : 0;
+    }
+
+    private applyRhythmChange(
+        cur: TaikoDifficultyHitObject, 
+        prev: TaikoDifficultyHitObject
+    ): number {
+        if(
+            !prev || 
+            cur.object.StartTime - prev.object.DeltaTime == 0
+        ) return 0;
+        
+        let timeElapsedRatio: number = Math.max(
+            prev.object.DeltaTime / cur.object.DeltaTime, 
+            cur.object.DeltaTime / prev.object.DeltaTime
+        );
     
-    let timeElapsedRatio = Math.max(previous.DeltaTime / current.DeltaTime, current.DeltaTime / previous.DeltaTime);
+        if(timeElapsedRatio >= 8) return 0;
+    
+        let difference: number = (Math.log(timeElapsedRatio) / Math.log(this.rhythm_change_base)) % 1.0;
+    
+        return (
+            difference > this.rhythm_change_base_threshold &&
+            difference < 1 - this.rhythm_change_base_threshold
+        ) ? 1 : 0;
+    }
 
-    if(timeElapsedRatio >= 8)
-        return false;
+    private computeStrains(): TaikoDifficultyHitObject[] {
+        let strain: number = 1;
+        let objects: TaikoDifficultyHitObject[] = this.beatmap.HitObjects.map(object => ({ object, strain }));
 
-    let difference = (Math.log(timeElapsedRatio) / Math.log(rhythm_change_base)) % 1.0;
-    return difference > rhythm_change_base_threshold && difference < 1 - rhythm_change_base_threshold;
+        objects.sort((a, b) => a.object.StartTime - b.object.StartTime);
+
+        objects.forEach((cur, i, arr) => {
+            let prev: TaikoDifficultyHitObject = arr[i - 1];
+            if (!prev) return;
+
+            let addition: number = 1;
+            let decay: number = Math.pow(0.3, cur.object.DeltaTime / 1e3);
+            
+            if (cur.object.IsNote && cur.object.DeltaTime < 1e3) {
+                addition += this.applyColourChange(cur, prev);
+                addition += this.applyRhythmChange(cur, prev);
+            } else {
+                this.lastColour = ColourSwitch.None;
+                this.sameColourCount = 1;
+            }
+
+            let additionFactor = cur.object.DeltaTime < 50 
+                ? 0.4 + 0.6 * cur.object.DeltaTime / 50 
+                : 1;
+    
+            objects[i].strain = prev.strain * decay + addition * additionFactor;
+        });
+
+        return objects;
+    }
+
+    private calcHighestStrains(
+        objects: TaikoDifficultyHitObject[]
+    ): number[] {
+        let sectionLen: number = 400 * this.timeScale;
+        let curSectionEnd: number = Math.ceil(objects[0].object.StartTime / sectionLen) * sectionLen;
+        let curSectionPick: number = 0;
+        let highestStrains: number[] = [];
+
+        let last: TaikoDifficultyHitObject = null;
+
+        for(let o of objects) {
+            while(o.object.StartTime > curSectionEnd) {
+                highestStrains.push(curSectionPick);
+                
+                if (!last) 
+                    curSectionPick = 0;
+                else {
+                    let decay = Math.pow(this.strain_decay_base, (curSectionEnd - o.object.StartTime) / 1e3);
+                    curSectionPick -= last.strain * decay;
+                }
+
+                curSectionEnd += sectionLen;
+            }
+            curSectionPick = Math.max(curSectionPick, o.strain);
+
+            last = o;
+        }
+
+        return highestStrains.sort((a, b) => b - a);
+    }
+
+    private calcDifficulty(highestStrains: number[]) {
+        let difficulty: number = 0,
+            weight: number = 1;
+
+        for(let strain of highestStrains) {
+            difficulty += strain * weight;
+            weight *= 0.9;
+        }
+
+        return difficulty;
+    }
 }
 
 export class TaikoDifficulty extends Difficulty {
