@@ -134,8 +134,8 @@ class DifficultyCalculator {
                 if (!last) 
                     curSectionPick = 0;
                 else {
-                    let decay = Math.pow(this.strain_decay_base, (curSectionEnd - o.object.StartTime) / 1e3);
-                    curSectionPick -= last.strain * decay;
+                    let decay = Math.pow(this.strain_decay_base, (curSectionEnd - last.object.StartTime) / 1e3);
+                    curSectionPick = last.strain * decay;
                 }
 
                 curSectionEnd += sectionLen;
