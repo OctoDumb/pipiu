@@ -4,8 +4,10 @@ import Mods from './Mods';
 
 export function ApplyTimeScaling(mods: Mods) {
     let timeScale = 1;
-    if((mods & Mods.DT) || (mods & Mods.NC)) timeScale *= 1.5;
-    else if(mods & Mods.HT) timeScale *= 0.75;
+    if((mods & Mods.DT) || (mods & Mods.NC)) 
+        timeScale *= 1.5;
+    else if(mods & Mods.HT) 
+        timeScale *= 0.75;
     
     this.HitObjects = this.HitObjects.map(o => {
         this.StartTime /= timeScale;

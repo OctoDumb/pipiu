@@ -49,15 +49,13 @@ export default class TaikoBeatmap extends Beatmap {
             return lastObj;
         });
     }
+
     CalculateDifficulty(timeScale: number): TaikoDifficulty {
         return calculateDifficulty(this, timeScale);
     }
 
     GetBeatmapWithMods(mods: Mods): TaikoBeatmap {
-        let map = this;
-        
-        ApplyTimeScaling.bind(map)(mods);
-
-        return map;
+        ApplyTimeScaling.bind(this)(mods);
+        return this;
     }
 }
