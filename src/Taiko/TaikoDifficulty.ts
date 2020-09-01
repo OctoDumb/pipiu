@@ -17,10 +17,10 @@ export default function CalculateDifficulty(
     beatmap: TaikoBeatmap,
     timeScale: number
 ): TaikoDifficulty {
-    return new DifficultyCalculator(beatmap, timeScale).diff;
+    return new TaikoDifficultyCalculator(beatmap, timeScale).diff;
 }
 
-class DifficultyCalculator {
+class TaikoDifficultyCalculator {
     private readonly rhythm_change_base_threshold = 0.2;
     private readonly rhythm_change_base = 2;
     private readonly strain_decay_base = 0.3;
@@ -39,7 +39,7 @@ class DifficultyCalculator {
         this.diff = new TaikoDifficulty(difficulty * this.star_scaling_factor);
     }
 
-    private lastColour: ColourSwitch = ColourSwitch.None;
+    private prevColour: ColourSwitch = ColourSwitch.None;
     private sameColourCount: number = 1;
 
     private applyColourChange(
@@ -53,10 +53,10 @@ class DifficultyCalculator {
             return 0;
         }
 
-        let oldColour: ColourSwitch = this.lastColour;
+        let oldColour: ColourSwitch = this.prevColour;
         let newColour: ColourSwitch = this.sameColourCount % 2 ? ColourSwitch.Even : ColourSwitch.Odd;
 
-        this.lastColour = newColour;
+        this.prevColour = newColour;
         this.sameColourCount = 1;
 
         return oldColour != ColourSwitch.None && oldColour != newColour ? 0.75 : 0;
@@ -103,7 +103,7 @@ class DifficultyCalculator {
                 addition += this.applyColourChange(cur, prev);
                 addition += this.applyRhythmChange(cur, prev);
             } else {
-                this.lastColour = ColourSwitch.None;
+                this.prevColour = ColourSwitch.None;
                 this.sameColourCount = 1;
             }
 
@@ -125,24 +125,24 @@ class DifficultyCalculator {
         let curSectionPick: number = 0;
         let highestStrains: number[] = [];
 
-        let last: TaikoDifficultyHitObject = null;
+        let prev: TaikoDifficultyHitObject = null;
 
         for(let o of objects) {
             while(o.object.StartTime > curSectionEnd) {
                 highestStrains.push(curSectionPick);
                 
-                if (!last) 
+                if (!prev) 
                     curSectionPick = 0;
                 else {
-                    let decay = Math.pow(this.strain_decay_base, (curSectionEnd - last.object.StartTime) / 1e3);
-                    curSectionPick = last.strain * decay;
+                    let decay = Math.pow(this.strain_decay_base, (curSectionEnd - prev.object.StartTime) / 1e3);
+                    curSectionPick = prev.strain * decay;
                 }
 
                 curSectionEnd += sectionLen;
             }
             curSectionPick = Math.max(curSectionPick, o.strain);
 
-            last = o;
+            prev = o;
         }
 
         return highestStrains.sort((a, b) => b - a);
