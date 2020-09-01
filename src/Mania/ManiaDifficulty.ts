@@ -13,7 +13,7 @@ export default function CalculateDifficulty(
     timeScale: number
 ): ManiaDifficulty {
     //console.log(timeScale)
-    return new ManiaDifficultyCalculator(beatmap, 1).diff;
+    return new ManiaDifficultyCalculator(beatmap, timeScale).diff;
 }
 
 class ManiaDifficultyCalculator {

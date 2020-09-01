@@ -53,7 +53,7 @@ export default class ManiaBeatmap extends Beatmap {
         }
     }
 
-    CalculateDifficulty(timeScale: number = 0.75) {
+    CalculateDifficulty(timeScale: number = 1) {
         return Calculate(this, timeScale);
     }
 
