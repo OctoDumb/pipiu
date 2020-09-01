@@ -1,6 +1,6 @@
 import Difficulty from "../Difficulty";
 import CatchBeatmap from "./CatchBeatmap";
-import CatchHitObject from "./CatchHitObject";
+import CatchHitObject, { CatchSliderTick } from "./CatchHitObject";
 import { Clamp, Sign } from "../Util";
 import { ABSOLUTE_PLAYER_POSITIONING_ERROR as errorMargin, NORMALIZED_HITOBJECT_RADIUS, DECAY_BASE, DIRECTION_CHANGE_BONUS, STRAIN_STEP, DECAY_WEIGHT, STAR_SCALING_FACTOR } from "./CatchConstants";
 
@@ -8,12 +8,12 @@ class CatchDifficultyHitObject {
     Strain = 1;
     Offset = 0;
     LastMovement = 0;
-    HitObject: CatchHitObject;
+    HitObject: CatchHitObject | CatchSliderTick;
     PlayerWidth: number;
     ScaledPosition: number;
     HyperdashDistance = 0;
     Hyperdash = false;
-    constructor(hitObject: CatchHitObject, playerWidth: number) {
+    constructor(hitObject: CatchHitObject | CatchSliderTick, playerWidth: number) {
         this.HitObject = hitObject;
         this.PlayerWidth = playerWidth;
         this.ScaledPosition = hitObject.X * (NORMALIZED_HITOBJECT_RADIUS / playerWidth);

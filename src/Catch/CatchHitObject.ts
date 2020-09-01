@@ -5,9 +5,15 @@ import CatchBeatmap from "./CatchBeatmap";
 import Slider, { Bezier, Catmull, Linear, Perfect } from "./CatchSliders";
 import Vector from "../Vector";
 
-interface SliderTick {
-    pos: Vector;
-    time: number;
+export class CatchSliderTick {
+    X: number;
+    Y: number;
+    StartTime: number;
+    constructor(pos: Vector, time: number) {
+        this.X = pos.X;
+        this.Y = pos.Y;
+        this.StartTime = time;
+    }
 }
 
 export default class CatchHitObject extends HitObject {
@@ -26,8 +32,8 @@ export default class CatchHitObject extends HitObject {
     SliderType?: string;
     CurvePoints?: Vector[];
     Path?: Vector[];
-    Ticks?: SliderTick[];
-    EndTicks?: SliderTick[];
+    Ticks?: CatchSliderTick[];
+    EndTicks?: CatchSliderTick[];
 
     constructor(data: DataHitObject, beatmap: CatchBeatmap) {
         super(data);
@@ -121,10 +127,7 @@ export default class CatchHitObject extends HitObject {
         while(currentDistance < this.Length - this.TickDistance / 8) {
             let point = curve.pointAtDistance(currentDistance);
 
-            this.Ticks.push({
-                pos: point,
-                time: this.StartTime + timeAdd * (this.Ticks.length + 1)
-            });
+            this.Ticks.push(new CatchSliderTick(point, this.StartTime + timeAdd * (this.Ticks.length + 1)));
             currentDistance += this.TickDistance;
         }
 
@@ -137,10 +140,7 @@ export default class CatchHitObject extends HitObject {
 
             let point = curve.pointAtDistance(dist);
 
-            this.EndTicks.push({
-                pos: point,
-                time: this.StartTime + timeOffset
-            });
+            this.EndTicks.push(new CatchSliderTick(point, this.StartTime + timeOffset));
 
             let repeatTicks = this.Ticks.slice(0);
 
@@ -152,7 +152,7 @@ export default class CatchHitObject extends HitObject {
             }
 
             for(let tick of repeatTicks)
-                tick.time = this.StartTime + timeOffset + Math.abs(tick.time - normalizeTimeValue);
+                tick.StartTime = this.StartTime + timeOffset + Math.abs(tick.StartTime - normalizeTimeValue);
 
             repeatBonusTicks.push(...repeatTicks);
 
@@ -164,10 +164,7 @@ export default class CatchHitObject extends HitObject {
         let distEnd = (1 & this.Repeat) * this.Length;
         let point = curve.pointAtDistance(distEnd);
 
-        this.EndTicks.push({
-            pos: point,
-            time: this.StartTime + this.Duration
-        });
+        this.EndTicks.push(new CatchSliderTick(point, this.StartTime + this.Duration));
     }
 
     getCombo(): number {

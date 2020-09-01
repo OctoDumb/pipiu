@@ -1,6 +1,7 @@
 {
     "compilerOptions": {
         "declaration": true,
+        "sourceMap": true,
         "module": "CommonJS",
         "outDir": "dist",
         "resolveJsonModule": true,
