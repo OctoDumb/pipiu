@@ -45,10 +45,6 @@ export default function calculateDifficulty(beatmap: OsuBeatmap) {
     return new OsuDifficulty(total, [aim, speed]);
 }
 
-// function lengthBonus(stars, difficulty) {
-//     return 0.32 + 0.5 * (Math.log10(difficulty + stars) - Math.log10(stars));
-// }
-
 function vectorNormalizer(cs: number) {
     let radius = (PLAYFIELD_SIZE.X / 16) *
         (1 - 0.7 * (cs - 5) / 5);
@@ -185,10 +181,10 @@ function calculateIndividual(type: number, objects: OsuDifficultyHitObject[], ti
     let weight = 1,
         difficulty = 0;
 
-    strains.sort((a, b) => a - b);
+    strains.sort((a, b) => b - a);
 
-    for(let i = 0; i < strains.length; i++) {
-        difficulty += strains[i] * weight;
+    for(let strain of strains) {
+        difficulty += strain * weight;
         weight *= DECAY_WEIGHT;
     }
 
