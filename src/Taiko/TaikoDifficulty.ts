@@ -22,10 +22,10 @@ export default function CalculateDifficulty(
 }
 
 class TaikoDifficultyCalculator extends DifficultyCalculator {
-    private readonly rhythm_change_base_threshold = 0.2;
-    private readonly rhythm_change_base = 2;
-    private readonly strain_decay_base = 0.3;
-    private readonly star_scaling_factor = 0.04125;
+    private readonly RHYTHM_CHANGE_BASE_THRESHOLD = 0.2;
+    private readonly RHYTHM_CHANGE_BASE = 2;
+    private readonly STRAIN_DECAY_BASE = 0.3;
+    protected readonly STAR_SCALING_FACTOR = 0.04125;
 
     private objects: TaikoDifficultyHitObject[];
 
@@ -40,7 +40,7 @@ class TaikoDifficultyCalculator extends DifficultyCalculator {
         const highestStrains: number[] = this.calcHighestStrains();
         const difficulty: number = this.calcDifficulty(highestStrains);
 
-        this.diff = new TaikoDifficulty(difficulty * this.star_scaling_factor);
+        this.diff = new TaikoDifficulty(difficulty * this.STAR_SCALING_FACTOR);
     }
 
     private prevColour: ColourSwitch = ColourSwitch.None;
@@ -82,11 +82,11 @@ class TaikoDifficultyCalculator extends DifficultyCalculator {
     
         if(timeElapsedRatio >= 8) return 0;
     
-        let difference: number = (Math.log(timeElapsedRatio) / Math.log(this.rhythm_change_base)) % 1.0;
+        let difference: number = (Math.log(timeElapsedRatio) / Math.log(this.RHYTHM_CHANGE_BASE)) % 1.0;
     
         return (
-            difference > this.rhythm_change_base_threshold &&
-            difference < 1 - this.rhythm_change_base_threshold
+            difference > this.RHYTHM_CHANGE_BASE_THRESHOLD &&
+            difference < 1 - this.RHYTHM_CHANGE_BASE_THRESHOLD
         ) ? 1 : 0;
     }
 
@@ -135,7 +135,7 @@ class TaikoDifficultyCalculator extends DifficultyCalculator {
                 
                 if (!prev) curSectionPick = 0;
                 else {
-                    let decay = Math.pow(this.strain_decay_base, (curSectionEnd - prev.object.StartTime) / 1e3);
+                    let decay = Math.pow(this.STRAIN_DECAY_BASE, (curSectionEnd - prev.object.StartTime) / 1e3);
                     curSectionPick = prev.strain * decay;
                 }
 

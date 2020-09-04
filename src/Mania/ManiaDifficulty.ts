@@ -20,7 +20,7 @@ export default function CalculateDifficulty(
 class ManiaDifficultyCalculator extends DifficultyCalculator {
     private readonly INDIVIDUAL_DECAY_BASE = 0.125;
     private readonly OVERALL_DECAY_BASE = 0.3;
-    private readonly STAR_SCALING_FACTOR = 0.018;
+    protected readonly STAR_SCALING_FACTOR = 0.018;
 
     private objects: ManiaDifficultyHitObject[];
 

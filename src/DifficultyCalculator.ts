@@ -1,5 +1,7 @@
 export abstract class DifficultyCalculator {
-    protected DECAY_WEIGHT = 0.9;
+    protected readonly DECAY_WEIGHT: number = 0.9;
+
+    protected abstract STAR_SCALING_FACTOR: number;
 
     protected abstract initObjects(): void;
     protected abstract calcHighestStrains(type?: number): number[];

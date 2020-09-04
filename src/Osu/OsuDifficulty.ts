@@ -23,7 +23,6 @@ class OsuCalculator extends DifficultyCalculator{
     private readonly STRAIN_DECAY_BASE = [ 0.3, 0.15 ];
     private readonly WEIGHT_SCALING = [ 1400, 26.25 ];
     private readonly CS_BUFF_THRESHOLD = 30;
-    private readonly STAR_SCALING_FACTOR = 0.0675;
     private readonly PLAYFIELD_SIZE = new Vector(512, 384);
     private readonly PLAYFIELD_CENTER = this.PLAYFIELD_SIZE.mul(0.5);
     private readonly MIN_SPEED_BONUS = 75;
@@ -32,6 +31,7 @@ class OsuCalculator extends DifficultyCalculator{
     private readonly AIM_TIMING_THRESHOLD = 107;
     private readonly SPEED_ANGLE_BONUS_BEGIN = 5 * Math.PI / 6;
     private readonly AIM_ANGLE_BONUS_BEGIN = Math.PI / 3;
+    protected readonly STAR_SCALING_FACTOR = 0.0675;
 
     private timeScale: number;
 
