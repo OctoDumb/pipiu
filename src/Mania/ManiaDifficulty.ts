@@ -1,6 +1,7 @@
 import Difficulty from "../Difficulty";
 import ManiaBeatmap from "./ManiaBeatmap";
 import ManiaHitObject from "./ManiaHitObject";
+import { DifficultyCalculator } from "../DifficultyCalculator";
 
 interface ManiaDifficultyHitObject {
     note: ManiaHitObject;
@@ -16,12 +17,12 @@ export default function CalculateDifficulty(
     return new ManiaDifficultyCalculator(beatmap, timeScale).diff;
 }
 
-class ManiaDifficultyCalculator {
+class ManiaDifficultyCalculator extends DifficultyCalculator {
     private readonly INDIVIDUAL_DECAY_BASE = 0.125;
     private readonly OVERALL_DECAY_BASE = 0.3;
     private readonly STAR_SCALING_FACTOR = 0.018;
 
-    private notes: ManiaDifficultyHitObject[];
+    private objects: ManiaDifficultyHitObject[];
 
     public readonly diff: ManiaDifficulty;
 
@@ -29,6 +30,7 @@ class ManiaDifficultyCalculator {
         private readonly beatmap: ManiaBeatmap,
         private readonly timeScale: number = 1
     ) {
+        super();
         this.initObjects();
         this.computeStrains();
         const highestStains: number[] = this.calcHighestStrains();
@@ -37,21 +39,21 @@ class ManiaDifficultyCalculator {
         this.diff = new ManiaDifficulty(difficulty * this.STAR_SCALING_FACTOR);
     }
 
-    private initObjects() {
-        this.notes = this.beatmap.HitObjects.map(note => ({ 
+    protected initObjects() {
+        this.objects = this.beatmap.HitObjects.map(note => ({ 
             note, 
             individualStrain: new Array(this.beatmap.Stats.CS).fill(0),
             overallStrain: 1
         }));
 
-        this.notes.sort((a, b) => a.note.StartTime - b.note.StartTime);
+        this.objects.sort((a, b) => a.note.StartTime - b.note.StartTime);
     }
 
     private computeStrains() {
-        let prev: ManiaDifficultyHitObject = this.notes[0];
+        let prev: ManiaDifficultyHitObject = this.objects[0];
         let heldUntil: number[] = new Array(this.beatmap.Stats.CS).fill(0);
 
-        for(let object of this.notes.slice(1)) {
+        for(let object of this.objects.slice(1)) {
             let delta: number = (object.note.StartTime - prev.note.StartTime) / this.timeScale / 1e3;
             let individualDecay: number = this.INDIVIDUAL_DECAY_BASE ** delta;
             let overallDecay: number = this.OVERALL_DECAY_BASE ** delta;
@@ -80,15 +82,15 @@ class ManiaDifficultyCalculator {
         }
     }
 
-    private calcHighestStrains(): number[] {
+    protected calcHighestStrains(): number[] {
         let sectionLen: number = 400 * this.timeScale;
-        let curSectionEnd: number = Math.ceil(this.notes[0].note.StartTime / sectionLen) * sectionLen;
+        let curSectionEnd: number = Math.ceil(this.objects[0].note.StartTime / sectionLen) * sectionLen;
         let curSectionPick = 0;
         let highestStains: number[] = [];
 
         let prev: ManiaDifficultyHitObject = null;
 
-        for(let o of this.notes) {
+        for(let o of this.objects) {
             while(o.note.StartTime > curSectionEnd) {
                 highestStains.push(curSectionPick);
 
@@ -109,20 +111,6 @@ class ManiaDifficultyCalculator {
         }
 
         return highestStains.sort((a, b) => b - a);
-    }
-
-    private calcDifficulty(
-        highestStains: number[]
-    ): number {
-        let difficulty: number = 0,
-            weight: number = 1;
-    
-        for(let strain of highestStains) {
-            difficulty += strain * weight;
-            weight *= 0.9;
-        }
-
-        return difficulty;
     }
 }
 

@@ -1,6 +1,7 @@
 import Difficulty from '../Difficulty';
 import TaikoHitObject, { NoteType } from './TaikoHitObject';
 import TaikoBeatmap from './TaikoBeatmap';
+import { DifficultyCalculator } from '../DifficultyCalculator';
 
 enum ColourSwitch {
     None,
@@ -20,20 +21,23 @@ export default function CalculateDifficulty(
     return new TaikoDifficultyCalculator(beatmap, timeScale).diff;
 }
 
-class TaikoDifficultyCalculator {
+class TaikoDifficultyCalculator extends DifficultyCalculator {
     private readonly rhythm_change_base_threshold = 0.2;
     private readonly rhythm_change_base = 2;
     private readonly strain_decay_base = 0.3;
     private readonly star_scaling_factor = 0.04125;
 
-    public diff: TaikoDifficulty; 
+    private objects: TaikoDifficultyHitObject[];
+
+    public diff: TaikoDifficulty;
 
     constructor(
         private readonly beatmap: TaikoBeatmap,
         private timeScale: number = 1
     ) {
-        const objects: TaikoDifficultyHitObject[] = this.computeStrains();
-        const highestStrains: number[] = this.calcHighestStrains(objects);
+        super();
+        this.initObjects();
+        const highestStrains: number[] = this.calcHighestStrains();
         const difficulty: number = this.calcDifficulty(highestStrains);
 
         this.diff = new TaikoDifficulty(difficulty * this.star_scaling_factor);
@@ -86,7 +90,7 @@ class TaikoDifficultyCalculator {
         ) ? 1 : 0;
     }
 
-    private computeStrains(): TaikoDifficultyHitObject[] {
+    protected initObjects() {
         let strain: number = 1;
         let objects: TaikoDifficultyHitObject[] = this.beatmap.HitObjects.map(object => ({ object, strain }));
 
@@ -114,25 +118,22 @@ class TaikoDifficultyCalculator {
             objects[i].strain = prev.strain * decay + addition * additionFactor;
         });
 
-        return objects;
+        this.objects = objects;
     }
 
-    private calcHighestStrains(
-        objects: TaikoDifficultyHitObject[]
-    ): number[] {
+    protected calcHighestStrains(): number[] {
         let sectionLen: number = 400 * this.timeScale;
-        let curSectionEnd: number = Math.ceil(objects[0].object.StartTime / sectionLen) * sectionLen;
+        let curSectionEnd: number = Math.ceil(this.objects[0].object.StartTime / sectionLen) * sectionLen;
         let curSectionPick: number = 0;
         let highestStrains: number[] = [];
 
         let prev: TaikoDifficultyHitObject = null;
 
-        for(let o of objects) {
+        for(let o of this.objects) {
             while(o.object.StartTime > curSectionEnd) {
                 highestStrains.push(curSectionPick);
                 
-                if (!prev) 
-                    curSectionPick = 0;
+                if (!prev) curSectionPick = 0;
                 else {
                     let decay = Math.pow(this.strain_decay_base, (curSectionEnd - prev.object.StartTime) / 1e3);
                     curSectionPick = prev.strain * decay;
@@ -146,18 +147,6 @@ class TaikoDifficultyCalculator {
         }
 
         return highestStrains.sort((a, b) => b - a);
-    }
-
-    private calcDifficulty(highestStrains: number[]) {
-        let difficulty: number = 0,
-            weight: number = 1;
-
-        for(let strain of highestStrains) {
-            difficulty += strain * weight;
-            weight *= 0.9;
-        }
-
-        return difficulty;
     }
 }
 
