@@ -13,7 +13,7 @@ export default abstract class HitObject {
     Y: number;
     StartTime: number;
     EndTime?: number;
-    DeltaTime: number;
+    //DeltaTime: number;
 
     constructor(data: DataHitObject) {
         this.X = data.x;

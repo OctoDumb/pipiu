@@ -1,8 +1,8 @@
 import Beatmap, { BeatmapStats, BeatmapBPM, TimingPoint } from "../Beatmap";
 import { BeatmapData } from "../Parser";
 import { ApplyTimeScaling } from "../Util";
-import ManiaHitObject from "./ManiaHitObject";
-import Calculate from "./ManiaDifficulty";
+import ManiaHitObject from "./HitObjects/ManiaHitObject";
+import ManiaCalculator from "./ManiaDifficulty";
 import Mods from "../Mods";
 
 class ManiaStats extends BeatmapStats {
@@ -40,21 +40,14 @@ export default class ManiaBeatmap extends Beatmap {
 
         this.Stats = new ManiaStats(data);
 
-        let lastObj = [];
-
         for(let obj of data.objects) {
-            let column = Math.floor(obj.x / 512 * this.Stats.CS);
-            if(!lastObj[column]) {
-                this.HitObjects.push(new ManiaHitObject(obj, 0, this.Stats.CS));
-            } else {
-                this.HitObjects.push(new ManiaHitObject(obj, obj.startTime - lastObj[column], this.Stats.CS));
-            }
-            lastObj[column] = this.HitObjects[this.HitObjects.length - 1].EndTime;
+            this.HitObjects.push(new ManiaHitObject(obj, this.Stats.CS));
         }
     }
 
-    CalculateDifficulty(timeScale: number = 1) {
-        return Calculate(this, timeScale);
+    CalculateDifficulty(/* timeScale?: number = 1 */) {
+        const data = new ManiaCalculator(this).calculate([], 1);
+        return data;
     }
 
     GetBeatmapWithMods(mods: Mods): ManiaBeatmap {

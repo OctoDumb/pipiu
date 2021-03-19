@@ -100,7 +100,7 @@ export default abstract class Beatmap {
         });
     }
 
-    abstract CalculateDifficulty(timeScale: number): Difficulty;
+    abstract CalculateDifficulty(timeScale: number);
 
     abstract GetBeatmapWithMods(mods: Mods): Beatmap;
 

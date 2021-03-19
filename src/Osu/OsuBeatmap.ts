@@ -1,8 +1,8 @@
 import Beatmap, { BeatmapStats } from '../Beatmap';
-import calculateDifficulty, { OsuDifficulty } from './OsuDifficulty';
+import OsuCalculator from './OsuDifficulty';
 import { BeatmapData } from '../Parser';
 import { Round } from '../Util';
-import OsuHitObject from './OsuHitObject';
+import OsuHitObject from './HitObjects/OsuHitObject';
 import Mods from '../Mods';
 
 class OsuStats extends BeatmapStats {
@@ -34,8 +34,7 @@ export default class OsuBeatmap extends Beatmap {
         let lastObject: OsuHitObject;
 
         this.HitObjects = data.objects.map(o => {
-            let delta = lastObject ? o.startTime - lastObject.StartTime : 0;
-            let obj = new OsuHitObject(o, delta);
+            let obj = new OsuHitObject(o);
             lastObject = obj;
             return obj;
         });
@@ -45,7 +44,8 @@ export default class OsuBeatmap extends Beatmap {
         return this;
     }
 
-    CalculateDifficulty(timeScale: number): OsuDifficulty {
-        return calculateDifficulty(this);
+    CalculateDifficulty(timeScale?: number) {
+        let data = new OsuCalculator(this).calculate([], 1);
+        return data;
     }
 }
